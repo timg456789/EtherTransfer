@@ -1,0 +1,32 @@
+{
+  "name": "ether",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "transfer-ether": "node scripts/transfer-ether",
+    "print-decrypted-wallet": "node scripts/print-decrypted-wallet",
+    "print-ether-vars": "node scripts/print-ether-environment-variables"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/timg456789/Ether.git"
+  },
+  "keywords": [
+    "ethereum"
+  ],
+  "author": "Timothy Gonzalez",
+  "license": "Apache 2.0",
+  "bugs": {
+    "url": "https://github.com/timg456789/Ether/issues"
+  },
+  "homepage": "https://github.com/timg456789/Ether#readme",
+  "dependencies": {
+    "minimist": "1.2.0",
+    "moment": "2.20.1",
+    "web3": "1.0.0-beta.27",
+    "web3-eth": "1.0.0-beta.27",
+    "web3-eth-accounts": "1.0.0-beta.27",
+    "web3-utils": "1.0.0-beta.27"
+  }
+}
