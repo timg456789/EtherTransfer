@@ -1,3 +1,4 @@
+const BigInteger = require('bn').BigInteger;
 const fs = require('fs');
 const moment = require('moment');
 const args = require('minimist')(process.argv.slice(2));
@@ -50,41 +51,45 @@ let encryptedWalletFilename = `encrypted-wallet-${timestamp}.json`;
 console.log('encrypted wallet with to and from accounts saved to ' + encryptedWalletFilename);
 fs.writeFileSync(encryptedWalletFilename, JSON.stringify(encryptedWallet));
 
-let txTransfer = {};
 let gasPriceOut;
 let gasLimitOut;
+let data = Utils.toHex((args['data-path'] && args['data-path'].length > 0)
+    ? '/*' + moment().utc().toISOString() + '*/' + '\r\n' + fs.readFileSync(args['data-path'], 'utf8').toString()
+    : moment().utc().toISOString());
+let amountOut;
 web3.eth.getBlockNumber()
     .then(latestBlockNumber => web3.eth.getBlock(latestBlockNumber))
     .then((latestBlock) => gasLimitOut = latestBlock.gasLimit)
     .then(() => args.amount === 'ALL'
         ? web3.eth.getBalance(from.address)
         : Promise.resolve(parseInt(args.amount)))
-    .then((amount) => {
-        txTransfer.from = from.address;
-        txTransfer.to = to.address;
-        txTransfer.value = amount;
-        let rawData = (args['data-path'] && args['data-path'].length > 0)
-            ? '/*' + moment().utc().toISOString() + '*/' + '\r\n' + fs.readFileSync(args['data-path'], 'utf8').toString()
-            : moment().utc().toISOString();
-        console.log(rawData);
-        txTransfer.data = Utils.toHex(rawData);
-    })
+    .then((amount) => amountOut = amount)
     .then(() => web3.eth.getGasPrice())
     .then((gasPrice) => gasPriceOut = gasPrice)
-    .then(() => web3.eth.estimateGas(txTransfer))
+    .then(() => web3.eth.estimateGas({
+        "from": from.address, "to": to.address,
+        "value": amountOut, "data": data
+    }))
     .then((gasEstimate) => {
-        txTransfer.gas = gasEstimate;
-        if (txTransfer.gas > gasLimitOut) {
-            txTransfer.gas = gasLimitOut;
+        let tx = {
+            "from": from.address, "to": to.address,
+            "value": amountOut, "data": data, "gas": gasEstimate
+        };
+        console.log('max amount to send: ' + tx.value);
+        if (tx.gas > gasLimitOut) {
+            tx.gas = gasLimitOut;
             console.log('gas limit reached ' + gasLimitOut);
         }
-        console.log('gas ' + txTransfer.gas);
+        console.log('gas ' + tx.gas.toString());
         console.log(`gas price ${Utils.fromWei(gasPriceOut)} ether`);
-        let gasTxFees = txTransfer.gas * gasPriceOut;
+        let bigGasPrice = new BigInteger(gasPriceOut);
+        let bigGas = new BigInteger(tx.gas.toString());
+        let gasTxFees = bigGas.multiply(bigGasPrice);
         console.log(`tx fees ${Utils.fromWei(gasTxFees.toString(), 'ether')} ether`);
-        txTransfer.value = txTransfer.value - gasTxFees;
-        console.log(`Sending ${Utils.fromWei(txTransfer.value.toString(), 'ether')} ether with ${txTransfer.gas} gas from ${from.address}/${from.privateKey} to ${to.address}/${to.privateKey}`);
-        return web3.eth.sendTransaction(txTransfer);
+        tx.value = tx.value - gasTxFees;
+        tx.value -= 1000; //  Calculation was correct (confirmed by remaining balance), but protocol doesn't allow this to be a perfect zero balance in one transaction.
+        console.log(`Sending ${Utils.fromWei(tx.value.toString(), 'ether')} ether with ${tx.gas} gas from ${from.address}/${from.privateKey} to ${to.address}/${to.privateKey}`);
+        return web3.eth.sendTransaction(tx);
     })
     .then((receipt) => {
         console.log(receipt);

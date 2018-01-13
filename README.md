@@ -1,4 +1,4 @@
-# Ether
+# Ether Transfer
 
 **Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the [License](https://www.apache.org/licenses/LICENSE-2.0) for the specific language governing permissions and
 limitations under the License.**
@@ -12,7 +12,7 @@ This application is excellent at placing data onto the blockchain or distributin
 
 ### Print environment variables
 
-Put ethereum in environment variables then access them quickly with this command, which will fail unless called with Administrator privileges.
+Put private keys in environment variables then access them quickly with this command, which will fail unless called with Administrator privileges.
 
     npm run print-ether-vars
 
@@ -32,14 +32,14 @@ Put ethereum in environment variables then access them quickly with this command
 ### Decrypt Wallet
 
     npm run print-decrypted-wallet --
-        --path // full path from "run transfer-ether"
-        --password // password from "run transfer-ether"
+        --path // full path to the .json file created by "run transfer-ether"
+        --password // password provided to "run transfer-ether"
 
 ## Setup
 
-### Prerequiesite to Run NPM Install
+### Prerequiesite
 
-First install [windows build tools](https://github.com/ethereum/web3.js/issues/1064) globally. `npm install --global windows-build-tools` to fix the error below.
+In order to fix `npm install` raising the error below, install [windows build tools](https://github.com/ethereum/web3.js/issues/1064) globally: `npm install --global windows-build-tools`
 
     C:\Users\peon\Desktop\projects\Ether\node_modules\scrypt>if not defined npm_config_node_gyp (node "C:\Program Files\nodejs\node_modules\npm\bin\node-gyp-bin\\..\..\node_modules\node-gyp\bin\node-gyp.js" rebuild )  else (node "" rebuild )
     gyp ERR! configure error
@@ -47,8 +47,8 @@ First install [windows build tools](https://github.com/ethereum/web3.js/issues/1
 
 ## Helpful Projects
 
+[web3 api docs](https://web3js.readthedocs.io/en/1.0/web3-eth.html)
+
 [MyEtherWallet](https://www.myetherwallet.com/)
 
-[https://www.myetherapi.com/](https://www.myetherapi.com/)
-
-[web3 docs](https://web3js.readthedocs.io/en/1.0/web3-eth.html)
+[MyEtherApi - web3 provider](https://www.myetherapi.com/)
