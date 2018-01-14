@@ -23,11 +23,12 @@ Put private keys in environment variables then access them quickly with this com
 ### Transfer
 
     npm run transfer-ether --
-        --from // private key of sender
-        --to // private key of recipient
+        --from // private key of sender defaults to process.env.ether_private_key
+        --to // private key of recipient defaults to process.env.ether_private_key_2
         --password // an arbitrary password to encrypt the accounts involved in the transfer to disk
+        --repeat-password
         --amount // amount in wei or "ALL" without quotes for the entire balance
-        --path // full path to a plain-text file on disk to be included as data
+        --path // optional full path to a plain-text file on disk to be included as data
 
 ### Decrypt Wallet
 
@@ -48,6 +49,8 @@ In order to fix `npm install` raising the error below, install [windows build to
 ## Helpful Projects
 
 [web3 api docs](https://web3js.readthedocs.io/en/1.0/web3-eth.html)
+
+[Ethereum RPC docs](https://github.com/ethereum/wiki/wiki/JSON-RPC)
 
 [MyEtherWallet](https://www.myetherwallet.com/)
 
