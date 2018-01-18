@@ -6,17 +6,24 @@ const Web3 = require('web3');
 const Eth = require('web3-eth');
 const Accounts = require('web3-eth-accounts');
 const Utils = require('web3-utils');
+const QRCode = require('qrcode');
 
 const Timestamp = require('../src/timestamp');
 const timestamp2 = new Timestamp();
 const EthClient = require('../src/eth-client');
 
-const provider = 'https://api.myetherapi.com/eth';
-
+let provider = args.provider && args.provider.length > 0
+    ? args.provider
+    : 'https://api.myetherapi.com/eth';
+console.log('Provider: ' + provider);
+let chainId = provider.toLocaleLowerCase().startsWith("https://rinkeby.infura.io/")
+    ? 4
+    : 0;
 let accounts = new Accounts(provider);
 let web3 = new Web3(provider);
 let eth = new Eth(provider);
 let ethClient = new EthClient(provider);
+
 
 if (!args.from) {
     args.from = process.env.ether_private_key;
@@ -66,20 +73,31 @@ if (!(args.amount === 'ALL' || args.amount > 0)) {
     return;
 }
 
+let timestampText = timestamp2.getTimestamp();
 let encryptedWallet = wallet.encrypt(args.password);
-let encryptedWalletFilename = `encrypted-wallet-${timestamp2.getTimestamp()}.json`;
+let encryptedWalletFilename = `encrypted-wallet-${timestampText}.json`;
 console.log('encrypted wallet with to and from accounts saved to ' + encryptedWalletFilename);
 fs.writeFileSync(encryptedWalletFilename, JSON.stringify(encryptedWallet));
 
 let gasPriceOut;
 let gasLimitOut;
 let data = Utils.toHex((args['data-path'] && args['data-path'].length > 0)
-    ? '/*' + timestamp2.getTimestamp() + '*/' + '\r\n' + fs.readFileSync(args['data-path'], 'utf8').toString()
-    : timestamp2.getTimestamp());
+    ? '/*' + timestampText + '*/' + '\r\n' + fs.readFileSync(args['data-path'], 'utf8').toString()
+    : timestampText);
 let amountOut;
+let txCount;
+let latestBlockNumberOut;
 web3.eth.getBlockNumber()
-    .then(latestBlockNumber => web3.eth.getBlock(latestBlockNumber))
-    .then((latestBlock) => gasLimitOut = latestBlock.gasLimit)
+    .then(latestBlockNumber => {
+        latestBlockNumberOut = latestBlockNumber;
+        return web3.eth.getBlock(latestBlockNumber);
+    })
+    .then((latestBlock) => {
+        if (!latestBlock) {
+            return Promise.reject('block not found: ' + latestBlockNumberOut);
+        }
+        gasLimitOut = latestBlock.gasLimit;
+    })
     .then(() => args.amount === 'ALL'
         ? ethClient.promiseToGetBalance(from.address)
             .then((balance) => parseInt(balance.result, 16)) // from hex
@@ -87,6 +105,8 @@ web3.eth.getBlockNumber()
     .then((amount) => amountOut = amount)
     .then(() => web3.eth.getGasPrice())
     .then((gasPrice) => gasPriceOut = gasPrice)
+    .then(() => web3.eth.getTransactionCount(from.address))
+    .then((transactionCount) => txCount = transactionCount)
     .then(() => web3.eth.estimateGas({
         "from": from.address, "to": to.address,
         "value": amountOut, "data": data
@@ -113,7 +133,7 @@ web3.eth.getBlockNumber()
             return Promise.reject('Can\'t send negative amount ' + tx.value);
         }
         console.log(`Sending ${Utils.fromWei(tx.value.toString(), 'ether')} ether with ${tx.gas} gas from ${from.address}/${from.privateKey} to ${to.address}/${to.privateKey}`);
-        let nonce = 0;
+        let nonce = txCount;
         let rawTx = {
             "gasPrice": '0x' + parseInt(gasPriceOut).toString(16),
             "gasLimit": '0x' + parseInt(gasLimitOut).toString(16),
@@ -122,14 +142,21 @@ web3.eth.getBlockNumber()
             "value": '0x' + tx.value.toString(16),
             "data": tx.data,
             "nonce": '0x' + nonce.toString(16),
-            "chainId": 1
+            "chainId": chainId
         };
         console.log(rawTx);
         let fromRawTx = new Tx(rawTx);
         fromRawTx.sign(privateKeyFrom);
         let serializedTx = '0x' + fromRawTx.serialize().toString('hex');
         console.log('signed transaction ' + serializedTx);
-        return web3.eth.sendSignedTransaction(serializedTx);
+        let qrCodeFilename = `transaction-qr-code-${timestampText}.jpg`;
+        QRCode.toFile(qrCodeFilename, serializedTx, { type: "png" } );
+        console.log(`signed transaction hex saved to ${qrCodeFilename}`);
+        if (args['dry-run']) {
+            return Promise.resolve('broadcast skipped');
+        } else {
+            return web3.eth.sendSignedTransaction(serializedTx);
+        }
     })
     .then((receipt) => {
         console.log(receipt);

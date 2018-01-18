@@ -3,6 +3,27 @@
 **Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the [License](https://www.apache.org/licenses/LICENSE-2.0) for the specific language governing permissions and
 limitations under the License.**
 
+On a computer (to be referred to as the `notary`) with no I/O besides a keyboard, mouse and monitor:
+
+1. Create a new ethereum address
+2. Create a signed transaction sending ether to the new address
+3. Open the QR code jpg created in the current directory named `transaction-qr-code-DATE.jpg`
+
+On a separate device:
+
+1. Scan the QR code containing the signed transaction hex. The qr code data should start with `0x`.
+2. Send the signed transaction hex from the QR code as a text message to the [Twilio Ethereum](https://github.com/timg456789/TwilioEthereum) SMS endpoint
+    1. The md5 hash of the signed transaction hex will be returned
+    2. The entire transaction must be received as one message
+    3. **Twilio supports concatenation, but some carriers such as Sprint do not currently support concatenated messages on long code messages.**
+3. Secure the wallet
+    1. The computer aka `notary` used to create the address and encrypted wallet should be destroyed or the private key could be leaked
+    2. Copy the private key to paper by hand or type writer
+    3. Repeat the process when a key has the potential to have been leaked
+4. Send a text message to the Twilio Ethereum Endpoint to broadcast the transaction
+
+**Even this strict process only addresses one portion of safely transfering ethereum. The `notary` computer could alter the to address prior to signing and it could even be altered when decrypting if on a malicious machine.**
+
 ## Usage
 
 Transfers ethereum between two private keys. Both private keys are stored in a wallet which is encrypted and saved to disk for recovery purposes. The `--path` option can be used to specify a plain-text file to be included as data in the transaction. All transactions have a timestamp placed in the data field.
@@ -28,7 +49,9 @@ Put private keys in environment variables then access them quickly with this com
         --password // an arbitrary password to encrypt the accounts involved in the transfer to disk
         --repeat-password
         --amount // amount in wei or "ALL" without quotes for the entire balance
-        --path // optional full path to a plain-text file on disk to be included as data
+        --data-path // optional full path to a plain-text file on disk to be included as data
+        --provider // optional provider (rinkeby testnet is supported as an alternate to the mainnet)
+        --dry-run // optional flag to print and not broadcast the transaction
 
 ### Decrypt Wallet
 
