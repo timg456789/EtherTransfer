@@ -15,7 +15,7 @@ On a separate device:
 2. Send the signed transaction hex from the QR code as a text message to the [Twilio Ethereum](https://github.com/timg456789/TwilioEthereum) SMS endpoint
     1. The md5 hash of the signed transaction hex will be returned
     2. The entire transaction must be received as one message
-    3. **Twilio supports concatenation, but some carriers such as Sprint do not currently support concatenated messages on long code messages.**
+    3. Twilio supports concatenation, but some carriers such as Sprint do not currently support concatenated messages on long code messages. Send the transaction as an MMS by attaching any image to exceed the standard 160 SMS character limit. See [Twilio Ethereum}(https://github.com/timg456789/TwilioEthereum) for more details.
 3. Secure the wallet
     1. The computer aka `notary` used to create the address and encrypted wallet should be destroyed or the private key could be leaked
     2. Copy the private key to paper by hand or type writer
